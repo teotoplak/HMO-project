@@ -1,12 +1,10 @@
 package store;
 
 import lombok.Data;
-import lombok.Getter;
-import models.Activity;
-import models.Group;
 import models.Student;
 import models.StudentActivity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,7 +12,7 @@ import java.util.stream.Collectors;
 @Data
 public class StudentStore {
 
-    public static Map<Long, Student> studentMap;
+    public static Map<Long, Student> studentMap = new HashMap<>();
 
     public static List<Long> getAllSelectedGroupIdsForStudent(Long studentId) {
         return StudentStore.studentMap.get(studentId).getActivityIds().stream()

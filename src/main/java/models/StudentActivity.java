@@ -1,11 +1,13 @@
 package models;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import store.GroupStore;
 
 import java.util.List;
 
 @Data
+@AllArgsConstructor
 public class StudentActivity {
 
     private Long studentId;
