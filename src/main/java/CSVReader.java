@@ -21,18 +21,22 @@ public class CSVReader {
 
     public static void main(String[] args) {
 
-        List<StudentCsv> studentCsvs = parseCsvFileWithHeader(studentsFile).stream()
+        // TODO read args - error handling
+
+        List<StudentCsv> studentsCsv = parseCsvFileWithHeader(studentsFile).stream()
                 .map(StudentCsv::new)
                 .collect(Collectors.toList());
-        List<OverlapCsv> overlapCsvs = parseCsvFileWithHeader(overlapsFile).stream()
+        List<OverlapCsv> overlapsCsv = parseCsvFileWithHeader(overlapsFile).stream()
                 .map(OverlapCsv::new)
                 .collect(Collectors.toList());
-        List<RequestCsv> requestCsvs = parseCsvFileWithHeader(requestsFile).stream()
+        List<RequestCsv> requestsCsv = parseCsvFileWithHeader(requestsFile).stream()
                 .map(RequestCsv::new)
                 .collect(Collectors.toList());
-        List<LimitCsv> limitCsvs = parseCsvFileWithHeader(limitsFile).stream()
+        List<LimitCsv> limitsCsv = parseCsvFileWithHeader(limitsFile).stream()
                 .map(LimitCsv::new)
                 .collect(Collectors.toList());
+
+        //TODO remove requests that contains non-existing student id
 
         //key is student_id
         Map<Long, List<StudentCsv>> studentsMap = new HashMap<>();
