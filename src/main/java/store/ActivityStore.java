@@ -8,5 +8,5 @@ import java.util.List;
 @Data
 public class ActivityStore {
 
-    private List<Activity> activities;
+    public static List<Activity> activities;
 }

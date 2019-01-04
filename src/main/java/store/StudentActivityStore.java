@@ -8,7 +8,7 @@ import java.util.Map;
 @Data
 public class StudentActivityStore {
 
-    private Map<String, StudentActivity> studentActivityMap;
+    public static Map<String, StudentActivity> studentActivityMap;
 
     public int calculatePoints(Long studentId, Long activityId) {
         return 0;

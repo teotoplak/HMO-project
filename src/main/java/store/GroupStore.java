@@ -8,7 +8,7 @@ import java.util.Map;
 @Data
 public class GroupStore {
 
-    private Map<Long, Group> groupMap;
+    public static Map<Long, Group> groupMap;
 
     public int calculatePoints(Long groupId) {
         return 0;
