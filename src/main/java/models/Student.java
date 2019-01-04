@@ -9,5 +9,4 @@ public class Student {
 
     private Long id;
     private List<Long> activityIds;
-    private int swapWeight;
 }
