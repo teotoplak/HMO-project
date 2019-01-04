@@ -9,4 +9,8 @@ import java.util.Map;
 public class StudentActivityStore {
 
     private Map<String, StudentActivity> studentActivityMap;
+
+    public int calculatePoints(Long studentId, Long activityId) {
+        return 0;
+    }
 }
