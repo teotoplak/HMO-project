@@ -1,11 +1,14 @@
-package models;
+package models.csv;
 
-public class Overlap {
+import lombok.Data;
+
+@Data
+public class OverlapCsv {
 
     private Long group1_id;
     private Long group2_id;
 
-    public Overlap(String[] csvLineParsed) {
+    public OverlapCsv(String[] csvLineParsed) {
         this.group1_id = Long.parseLong(csvLineParsed[0]);
         this.group2_id = Long.parseLong(csvLineParsed[1]);
     }

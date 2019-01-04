@@ -5,9 +5,9 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class Student {
+public class Activity {
 
     private Long id;
-    private List<Long> activityIds;
-    private int swapWeight;
+    private List<Long> studentIds;
+
 }

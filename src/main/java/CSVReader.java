@@ -1,7 +1,7 @@
-import models.Limit;
-import models.Overlap;
-import models.Request;
-import models.Student;
+import models.csv.LimitCsv;
+import models.csv.OverlapCsv;
+import models.csv.RequestCsv;
+import models.csv.StudentCsv;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -21,20 +21,21 @@ public class CSVReader {
 
     public static void main(String[] args) {
 
-        List<Student> students = parseCsvFileWithHeader(studentsFile).stream()
-                .map(Student::new)
+        List<StudentCsv> studentCsvs = parseCsvFileWithHeader(studentsFile).stream()
+                .map(StudentCsv::new)
                 .collect(Collectors.toList());
-        List<Overlap> overlaps = parseCsvFileWithHeader(overlapsFile).stream()
-                .map(Overlap::new)
+        List<OverlapCsv> overlapCsvs = parseCsvFileWithHeader(overlapsFile).stream()
+                .map(OverlapCsv::new)
                 .collect(Collectors.toList());
-        List<Request> requests = parseCsvFileWithHeader(requestsFile).stream()
-                .map(Request::new)
+        List<RequestCsv> requestCsvs = parseCsvFileWithHeader(requestsFile).stream()
+                .map(RequestCsv::new)
                 .collect(Collectors.toList());
-        List<Limit> limits = parseCsvFileWithHeader(limitsFile).stream()
-                .map(Limit::new)
+        List<LimitCsv> limitCsvs = parseCsvFileWithHeader(limitsFile).stream()
+                .map(LimitCsv::new)
                 .collect(Collectors.toList());
 
-        Map<Long, Student> studentsMap = new HashMap<>();
+        //key is student_id
+        Map<Long, List<StudentCsv>> studentsMap = new HashMap<>();
 
 
     }

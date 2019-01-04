@@ -1,6 +1,9 @@
-package models;
+package models.csv;
 
-public class Limit {
+import lombok.Data;
+
+@Data
+public class LimitCsv {
 
     private Long group_id;
     private Long students_cnt;
@@ -9,7 +12,7 @@ public class Limit {
     private Long max;
     private Long max_preferred;
 
-    public Limit(String[] csvLineParsed) {
+    public LimitCsv(String[] csvLineParsed) {
         this.group_id = Long.parseLong(csvLineParsed[0]);
         this.students_cnt = Long.parseLong(csvLineParsed[1]);
         this.min = Long.parseLong(csvLineParsed[2]);
@@ -17,5 +20,4 @@ public class Limit {
         this.max = Long.parseLong(csvLineParsed[4]);
         this.max_preferred = Long.parseLong(csvLineParsed[5]);
     }
-
 }
