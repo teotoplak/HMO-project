@@ -15,4 +15,9 @@ public class StudentActivityStore {
     public int calculatePoints(Long studentId, Long activityId) {
         return 0;
     }
+
+    public static StudentActivity getStudentActivity(Long studentId, Long activityId) {
+        // todo
+        return null;
+    }
 }

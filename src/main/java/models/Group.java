@@ -16,4 +16,20 @@ public class Group {
     private Long minPreferred;
     private Long maxPreferred;
     private List<Long> overlapGroupIds;
+
+    public boolean isFull() {
+        return studentCount >= max;
+    }
+
+    public boolean isAtMinNumOfStudents() {
+        return studentCount <= min;
+    }
+
+    public void increaseStudentCount() {
+        this.studentCount++;
+    }
+
+    public void decreaseStudentCount() {
+        this.studentCount--;
+    }
 }

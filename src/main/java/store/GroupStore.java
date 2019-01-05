@@ -14,4 +14,5 @@ public class GroupStore {
     public int calculatePoints(Long groupId) {
         return 0;
     }
+
 }
