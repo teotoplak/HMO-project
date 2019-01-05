@@ -21,14 +21,65 @@ import java.util.stream.Collectors;
 
 public class CSVReader {
 
-    private static String studentsFile = "src/main/resources/instances/simple/task_example/student.csv";
-    private static String overlapsFile = "src/main/resources/instances/simple/task_example/overlaps.csv";
-    private static String requestsFile = "src/main/resources/instances/simple/task_example/requests.csv";
-    private static String limitsFile = "src/main/resources/instances/simple/task_example/limits.csv";
-
     public static void main(String[] args) {
+        Long timeout = 0L;
+        List<Long> awardActivities = new ArrayList<>();
+        Long awardStudent = 0L;
+        Long minMaxPenalty = 0L;
+        String studentsFile = "";
+        String requestsFile = "";
+        String overlapsFile = "";
+        String limitsFile = "";
 
-        // TODO read args - error handling
+        if(args.length != 16) {
+            System.err.println("Number of input arguments must be 16.\n Format is: –timeout <time_in_seconds> " +
+                    "–award-activity \"[<number>,...]\" –award-student <points_for_whole_student> –minmax-penalty <minmax_panalty>" +
+                    " –students-file <student_file_in_csv> –requests-file <request_file_in_csv> –overlaps-file <overlaps_file_in_csv> " +
+                    "–limits-file <limit_file_in_csv>");
+            System.exit(0);
+        }
+
+        try {
+            for (int i = 0; i < args.length - 1; i = i + 2) {
+                // maknula sam znak minusa jer oni imaju neki character koji nije jednak nasem minusu
+                switch (args[i].substring(1)) {
+                    case "timeout":
+                        timeout = Long.parseLong(args[i + 1]);
+                        break;
+                    case "award-activity":
+                        String[] awards = args[i + 1].split(",");
+                        for (String award : awards) {
+                            awardActivities.add(Long.parseLong(award));
+                        }
+                        break;
+                    case "award-student":
+                        awardStudent = Long.parseLong(args[i + 1]);
+                        break;
+                    case "minmax-penalty":
+                        minMaxPenalty = Long.parseLong(args[i + 1]);
+                        break;
+                    case "students-file":
+                        studentsFile = args[i + 1];
+                        break;
+                    case "requests-file":
+                        requestsFile = args[i + 1];
+                        break;
+                    case "overlaps-file":
+                        overlapsFile = args[i + 1];
+                        break;
+                    case "limits-file":
+                        limitsFile = args[i + 1];
+                        break;
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Input arguments are not correct. \n" +
+                    "Format is: –timeout <time_in_seconds> –award-activity \"[<number>,...]\" –award-student <points_for_whole_student> " +
+                    "–minmax-penalty <minmax_panalty> –students-file <student_file_in_csv> –requests-file <request_file_in_csv> " +
+                    "–overlaps-file <overlaps_file_in_csv> –limits-file <limit_file_in_csv>" +
+                    "\nException: " + e.getMessage());
+            System.exit(0);
+        }
 
         List<StudentCsv> studentsCsv = parseCsvFileWithHeader(studentsFile).stream()
                 .map(StudentCsv::new)
@@ -47,14 +98,13 @@ public class CSVReader {
         fillActivityStore(studentsCsv);
         fillGroupStore(limitsCsv, overlapsCsv);
         filStudentActivityStore(studentsCsv, requestsCsv);
-
     }
 
     private static void filStudentActivityStore(List<StudentCsv> studentsCsv, List<RequestCsv> requestsCsv) {
         for (StudentCsv studentCsv : studentsCsv) {
-            if(!StudentActivityStore.studentActivityMap.containsKey(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id())) {
+            if (!StudentActivityStore.studentActivityMap.containsKey(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id())) {
                 List<Long> possibleGroups = findPossibleGroups(requestsCsv, studentCsv);
-                if(possibleGroups.size() > 1) {
+                if (possibleGroups.size() > 1) {
                     StudentActivityStore.studentActivityMap.put(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id(),
                             new StudentActivity(studentCsv.getStudent_id(),
                                     studentCsv.getActivity_id(),
@@ -71,7 +121,7 @@ public class CSVReader {
         List<Long> list = requestsCsv.stream()
                 .filter(requestCsv ->
                         requestCsv.getStudent_id().equals(studentCsv.getStudent_id()) &&
-                        requestCsv.getActivity_id().equals(studentCsv.getActivity_id()))
+                                requestCsv.getActivity_id().equals(studentCsv.getActivity_id()))
                 .map(RequestCsv::getReq_group_id)
                 .collect(Collectors.toList());
         list.add(studentCsv.getGroup_id());
@@ -138,10 +188,8 @@ public class CSVReader {
         String line = "";
         String cvsSplitBy = ",";
         try (BufferedReader br = new BufferedReader(new FileReader(pathToFile))) {
-            // skipping header
             br.readLine();
             while ((line = br.readLine()) != null) {
-                // use comma as separator
                 parsedLines.add(line.split(cvsSplitBy));
             }
 
@@ -151,6 +199,4 @@ public class CSVReader {
 
         return parsedLines;
     }
-
-
 }
