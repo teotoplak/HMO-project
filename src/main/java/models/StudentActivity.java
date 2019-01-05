@@ -15,7 +15,7 @@ public class StudentActivity {
     private Long selectedGroupId;
     private Long initialGroupId;
     private List<Long> possibleGroupIds;
-    private int swapWeight;
+    private Long swapWeight;
 
     public void selectNewGroup(Long groupId) {
         // change counts of groups influenced
