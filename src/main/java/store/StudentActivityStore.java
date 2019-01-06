@@ -17,7 +17,7 @@ public class StudentActivityStore {
     }
 
     public static StudentActivity getStudentActivity(Long studentId, Long activityId) {
-        // todo
-        return null;
+        String key = studentId + ":" + activityId;
+        return studentActivityMap.get(key);
     }
 }

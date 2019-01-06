@@ -1,6 +1,9 @@
 public class Test {
 
     public static void main(String[] args) {
-
+        CSVReader.read(args);
+        SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
+        simulatedAnnealing.start();
+        simulatedAnnealing.start();
     }
 }

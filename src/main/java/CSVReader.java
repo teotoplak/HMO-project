@@ -21,11 +21,8 @@ import java.util.stream.Collectors;
 
 public class CSVReader {
 
-    public static void main(String[] args) {
-        Long timeout = 0L;
-        List<Long> awardActivities = new ArrayList<>();
-        Long awardStudent = 0L;
-        Long minMaxPenalty = 0L;
+    public static void read(String[] args) {
+
         String studentsFile = "";
         String requestsFile = "";
         String overlapsFile = "";
@@ -44,19 +41,19 @@ public class CSVReader {
                 // maknula sam znak minusa jer oni imaju neki character koji nije jednak nasem minusu
                 switch (args[i].substring(1)) {
                     case "timeout":
-                        timeout = Long.parseLong(args[i + 1]);
+                        ProblemParameters.timeout = Long.parseLong(args[i + 1]);
                         break;
                     case "award-activity":
                         String[] awards = args[i + 1].split(",");
                         for (String award : awards) {
-                            awardActivities.add(Long.parseLong(award));
+                            ProblemParameters.awardActivities.add(Long.parseLong(award));
                         }
                         break;
                     case "award-student":
-                        awardStudent = Long.parseLong(args[i + 1]);
+                        ProblemParameters.awardStudent = Long.parseLong(args[i + 1]);
                         break;
                     case "minmax-penalty":
-                        minMaxPenalty = Long.parseLong(args[i + 1]);
+                        ProblemParameters.minMaxPenalty = Long.parseLong(args[i + 1]);
                         break;
                     case "students-file":
                         studentsFile = args[i + 1];
@@ -104,15 +101,13 @@ public class CSVReader {
         for (StudentCsv studentCsv : studentsCsv) {
             if (!StudentActivityStore.studentActivityMap.containsKey(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id())) {
                 List<Long> possibleGroups = findPossibleGroups(requestsCsv, studentCsv);
-                if (possibleGroups.size() > 1) {
-                    StudentActivityStore.studentActivityMap.put(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id(),
-                            new StudentActivity(studentCsv.getStudent_id(),
-                                    studentCsv.getActivity_id(),
-                                    studentCsv.getGroup_id(),
-                                    studentCsv.getGroup_id(),
-                                    possibleGroups,
-                                    studentCsv.getSwap_weight()));
-                }
+                StudentActivityStore.studentActivityMap.put(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id(),
+                        new StudentActivity(studentCsv.getStudent_id(),
+                                studentCsv.getActivity_id(),
+                                studentCsv.getGroup_id(),
+                                studentCsv.getGroup_id(),
+                                possibleGroups,
+                                studentCsv.getSwap_weight()));
             }
         }
     }
