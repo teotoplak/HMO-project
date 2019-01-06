@@ -1,4 +1,3 @@
-import models.Activity;
 import models.Group;
 import models.Student;
 import models.StudentActivity;
@@ -7,16 +6,20 @@ import store.GroupStore;
 import store.StudentActivityStore;
 import store.StudentStore;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
 public class SimulatedAnnealing {
 
+    private static long largestTotalPoints = 0L;
+    private static long counterOfLargestTotalPoints = 0L;
+
     public void start() {
 
         // todo flag to stop the iterations
+
+
 
         // iterate through activities
         ActivityStore.activities.forEach(activity -> {
@@ -67,7 +70,7 @@ public class SimulatedAnnealing {
                     pointsA += studentActivity.getSwapWeight();
                     countOfSolvedActivities++;
                 }
-                System.out.println(studentActivity.getActivityId() + "-" + studentActivity.getStudentId() + "-" + studentActivity.getSelectedGroupId());
+               System.out.println(studentActivity.getActivityId() + "-" + studentActivity.getStudentId() + "-" + studentActivity.getSelectedGroupId());
             }
             pointsB += calculateAwardActivityPoints(countOfSolvedActivities);
             if (countOfSolvedActivities.equals(studentActivitiesWithRequest.size())) {
@@ -87,8 +90,14 @@ public class SimulatedAnnealing {
         System.out.println("total: " + totalPoints);
         System.out.println("+++++++++++++++++++++");
 
-        // todo memorize biggest solution
-
+        // todo memorize largestTotalPoints solution
+        if(totalPoints > largestTotalPoints) {
+            largestTotalPoints = totalPoints;
+            counterOfLargestTotalPoints = 1L;
+        } else if(totalPoints == largestTotalPoints) {
+            counterOfLargestTotalPoints++;
+            System.out.println("Largest total points: " + largestTotalPoints + ". Number of times: " + counterOfLargestTotalPoints);
+        }
 
     }
 
