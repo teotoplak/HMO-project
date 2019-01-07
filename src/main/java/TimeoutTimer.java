@@ -5,8 +5,13 @@ public class TimeoutTimer {
 
     private boolean isFinished;
 
-    public TimeoutTimer(long timeoutInSeconds) {
+    public TimeoutTimer(long timeoutInSeconds, TimerTask repetitiveTask, long periodInSeconds) {
         startTimer(timeoutInSeconds);
+        setRepetitiveTask(repetitiveTask, periodInSeconds);
+    }
+
+    public boolean isFinished() {
+        return isFinished;
     }
 
     private void startTimer(long timeoutInSeconds) {
@@ -20,8 +25,10 @@ public class TimeoutTimer {
         timer.schedule(task, timeoutInSeconds * 1000);
     }
 
-    public boolean isFinished() {
-        return isFinished;
+    private void setRepetitiveTask(TimerTask task, long periodInSeconds) {
+        Timer timer = new Timer("RepetitiveTimer");
+        timer.scheduleAtFixedRate(task, periodInSeconds * 1000, periodInSeconds * 1000);
     }
+
 
 }

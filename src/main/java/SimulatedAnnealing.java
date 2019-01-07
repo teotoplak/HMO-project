@@ -18,17 +18,27 @@ public class SimulatedAnnealing {
     private Map<String, Long> bestSolution = new HashMap<>();
     private Long bestSolutionValue = 0L;
     private Long numberOfIterations = 0L;
-    private final Long numOfIterationsForReport = 100000L;
+    private boolean showReportInNextIteration = false;
+    private final long reportIntervalPeriodInSeconds = 3L;
 
     public void start() {
 
-        TimeoutTimer timeoutTimer = new TimeoutTimer(ProblemParameters.timeout);
+        TimeoutTimer timeoutTimer = new TimeoutTimer(ProblemParameters.timeout, getTimerTaskForReports(), reportIntervalPeriodInSeconds);
+
+        bestSolutionValue = calculateSolutionPoints(false);
+        System.out.println("Starting points: " + bestSolutionValue);
 
         while (!timeoutTimer.isFinished()) {
             randomizeSolution();
             numberOfIterations++;
-            Long totalPoints = numberOfIterations % numOfIterationsForReport == 0 ?
-                    calculateSolutionPoints(true) : calculateSolutionPoints(false);
+            Long totalPoints;
+            if (showReportInNextIteration) {
+                System.out.println("Iterations number: " + numberOfIterations);
+                totalPoints = calculateSolutionPoints(true);
+                showReportInNextIteration = false;
+            } else {
+                totalPoints = calculateSolutionPoints(false);
+            }
             if (totalPoints > bestSolutionValue) {
                 memorizeBestSolution(totalPoints);
             }
@@ -152,6 +162,14 @@ public class SimulatedAnnealing {
         for (Map.Entry<String, Long> entry : bestSolution.entrySet())  {
             System.out.println(entry.getKey() + " / " + entry.getValue());
         }
+    }
+
+    private TimerTask getTimerTaskForReports() {
+        return new TimerTask() {
+            public void run() {
+                showReportInNextIteration = true;
+            }
+        };
     }
 
 }
