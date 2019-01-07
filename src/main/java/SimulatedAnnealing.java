@@ -8,19 +8,39 @@ import store.StudentStore;
 
 import java.util.List;
 import java.util.Random;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class SimulatedAnnealing {
 
-    private static long largestTotalPoints = 0L;
-    private static long counterOfLargestTotalPoints = 0L;
+    // key is in format studentId:activityId
+    // value is group ID
+    private Map<String, Long> bestSolution = new HashMap<>();
+    private Long bestSolutionValue = 0L;
+    private Long numberOfIterations = 0L;
+    private final Long numOfIterationsForReport = 100000L;
 
     public void start() {
 
-        // todo flag to stop the iterations
+        TimeoutTimer timeoutTimer = new TimeoutTimer(ProblemParameters.timeout);
 
+        while (!timeoutTimer.isFinished()) {
+            randomizeSolution();
+            numberOfIterations++;
+            Long totalPoints = numberOfIterations % numOfIterationsForReport == 0 ?
+                    calculateSolutionPoints(true) : calculateSolutionPoints(false);
+            if (totalPoints > bestSolutionValue) {
+                memorizeBestSolution(totalPoints);
+            }
+        }
 
+        System.out.println("Best solution is: " + bestSolutionValue);
+        System.out.println("Iterations number: " + numberOfIterations);
+        printBestSolutionMap();
+    }
 
+    // randomize solution and put it into stores
+    private void randomizeSolution() {
         // iterate through activities
         ActivityStore.activities.forEach(activity -> {
             // for each student activity find possible groups to select and do it randomly
@@ -55,22 +75,23 @@ public class SimulatedAnnealing {
             }
 
         });
+    }
 
+    private Long calculateSolutionPoints(boolean showReport) {
         // calculating points
         Long pointsA, pointsB, pointsC, pointsD, pointsE;
         pointsA = pointsB = pointsC = pointsD = pointsE = 0l;
         for (Student student : StudentStore.studentMap.values()) {
             List<StudentActivity> studentActivitiesWithRequest =
                     StudentStore.getStudentActivitiesOfStudent(student.getId()).stream()
-                    .filter(StudentActivity::hasRequest)
-                    .collect(Collectors.toList());
+                            .filter(StudentActivity::hasRequest)
+                            .collect(Collectors.toList());
             Integer countOfSolvedActivities = 0;
             for (StudentActivity studentActivity : studentActivitiesWithRequest) {
                 if (studentActivity.isChangedFromInitial()) {
                     pointsA += studentActivity.getSwapWeight();
                     countOfSolvedActivities++;
                 }
-               System.out.println(studentActivity.getActivityId() + "-" + studentActivity.getStudentId() + "-" + studentActivity.getSelectedGroupId());
             }
             pointsB += calculateAwardActivityPoints(countOfSolvedActivities);
             if (countOfSolvedActivities.equals(studentActivitiesWithRequest.size())) {
@@ -85,20 +106,15 @@ public class SimulatedAnnealing {
                 pointsE += (group.getStudentCount() - group.getMaxPreferred()) * ProblemParameters.minMaxPenalty;
             }
         }
-        System.out.println("A=" + pointsA + " B=" + pointsB + " C=" + pointsC + " D=" + pointsD + " E=" + pointsE);
+
         Long totalPoints = pointsA + pointsB + pointsC - pointsD - pointsE;
-        System.out.println("total: " + totalPoints);
-        System.out.println("+++++++++++++++++++++");
 
-        // todo memorize largestTotalPoints solution
-        if(totalPoints > largestTotalPoints) {
-            largestTotalPoints = totalPoints;
-            counterOfLargestTotalPoints = 1L;
-        } else if(totalPoints == largestTotalPoints) {
-            counterOfLargestTotalPoints++;
-            System.out.println("Largest total points: " + largestTotalPoints + ". Number of times: " + counterOfLargestTotalPoints);
+        if (showReport) {
+            System.out.println("A=" + pointsA + " B=" + pointsB + " C=" + pointsC + " D=" + pointsD + " E=" + pointsE);
+            System.out.println("total: " + totalPoints);
+            System.out.println("+++++++++++++++++++++");
         }
-
+        return totalPoints;
     }
 
     // if two lists have intersection items
@@ -124,6 +140,18 @@ public class SimulatedAnnealing {
             return ProblemParameters.awardActivities.get(ProblemParameters.awardActivities.size() - 1);
         }
         return ProblemParameters.awardActivities.get(numOfActivitiesSolved - 1);
+    }
+
+    private void memorizeBestSolution(long totalPoints) {
+        bestSolution = StudentActivityStore.studentActivityMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, x -> x.getValue().getSelectedGroupId()));
+        bestSolutionValue = totalPoints;
+    }
+
+    private void printBestSolutionMap() {
+        for (Map.Entry<String, Long> entry : bestSolution.entrySet())  {
+            System.out.println(entry.getKey() + " / " + entry.getValue());
+        }
     }
 
 }
