@@ -12,10 +12,6 @@ public class StudentActivityStore {
     // key is in format studentId:activityId
     public static Map<String, StudentActivity> studentActivityMap = new HashMap<>();
 
-    public int calculatePoints(Long studentId, Long activityId) {
-        return 0;
-    }
-
     public static StudentActivity getStudentActivity(Long studentId, Long activityId) {
         String key = studentId + ":" + activityId;
         return studentActivityMap.get(key);

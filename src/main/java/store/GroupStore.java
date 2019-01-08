@@ -11,8 +11,4 @@ public class GroupStore {
 
     public static Map<Long, Group> groupMap = new HashMap<>();
 
-    public int calculatePoints(Long groupId) {
-        return 0;
-    }
-
 }

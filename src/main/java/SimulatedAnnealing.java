@@ -10,43 +10,50 @@ import java.util.List;
 import java.util.Random;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SimulatedAnnealing {
 
-    // key is in format studentId:activityId
-    // value is group ID
-    private Map<String, Long> bestSolution = new HashMap<>();
-    private Long bestSolutionValue = 0L;
+    private BestSolution bestSolution;
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
     private final long reportIntervalPeriodInSeconds = 3L;
+
+    private long currentTemperature = ProblemParameters.intialTemperature;
 
     public void start() {
 
         TimeoutTimer timeoutTimer = new TimeoutTimer(ProblemParameters.timeout, getTimerTaskForReports(), reportIntervalPeriodInSeconds);
 
-        bestSolutionValue = calculateSolutionPoints(false);
-        System.out.println("Starting points: " + bestSolutionValue);
+        // initial solution
+        SolutionPoints initialSolutionPoints = calculateSolutionPoints();
+        System.out.println("Starting points: " + initialSolutionPoints.totalPoints);
+        memorizeBestSolution(initialSolutionPoints);
 
         while (!timeoutTimer.isFinished()) {
             randomizeSolution();
             numberOfIterations++;
-            Long totalPoints;
-            if (showReportInNextIteration) {
-                System.out.println("Iterations number: " + numberOfIterations);
-                totalPoints = calculateSolutionPoints(true);
-                showReportInNextIteration = false;
+
+            SolutionPoints currentSolutionPoints = calculateSolutionPoints();
+
+            if (currentSolutionPoints.totalPoints > bestSolution.solutionPoints.totalPoints) {
+                memorizeBestSolution(currentSolutionPoints);
             } else {
-                totalPoints = calculateSolutionPoints(false);
+                // return best solution to current
+                StudentActivityStore.studentActivityMap = bestSolution.getStudentActivityMap();
+                GroupStore.groupMap = bestSolution.getGroupMap();
             }
-            if (totalPoints > bestSolutionValue) {
-                memorizeBestSolution(totalPoints);
+
+            if (showReportInNextIteration) {
+                printSolutionPoints(bestSolution.solutionPoints);
+                System.out.println("Iterations number: " + numberOfIterations);
+                showReportInNextIteration = false;
             }
         }
 
-        System.out.println("Best solution is: " + bestSolutionValue);
+        System.out.println("Best solution is: " + bestSolution.solutionPoints.totalPoints);
         System.out.println("Iterations number: " + numberOfIterations);
-        printBestSolutionMap();
+        // printBestSolutionMap();
     }
 
     // randomize solution and put it into stores
@@ -70,14 +77,18 @@ public class SimulatedAnnealing {
                                 .map(StudentActivity::getSelectedGroupId)
                                 .collect(Collectors.toList());
                 // all groups for student activity which can be selected (including currently selected)
-                List<Long> possibleGroupIdsToSelect = studentActivity.getPossibleGroupIds().stream()
-                        .map(groupId -> GroupStore.groupMap.get(groupId))
-                        // if group is not selected one it should not be full (can't move to other group)
-                        .filter(group -> group.getId().equals(studentActivity.getSelectedGroupId()) || !group.isFull())
+                List<Long> possibleGroupIdsToSelect = getPossibleGroupsToSelectForStudentActivity(studentActivity)
                         // should not have overlap with other student group
                         .filter(group -> !hasIntersection(group.getOverlapGroupIds(), allCurrentGroupsIdsOfStudent))
                         .map(Group::getId)
                         .collect(Collectors.toList());
+
+                // if student has overlaps in all options select overlap at random
+                if (possibleGroupIdsToSelect.size() == 0) {
+                    possibleGroupIdsToSelect = getPossibleGroupsToSelectForStudentActivity(studentActivity)
+                            .map(Group::getId)
+                            .collect(Collectors.toList());
+                }
 
                 // randomize group selection
                 Long newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
@@ -87,7 +98,15 @@ public class SimulatedAnnealing {
         });
     }
 
-    private Long calculateSolutionPoints(boolean showReport) {
+    // filters option if group is full
+    private Stream<Group> getPossibleGroupsToSelectForStudentActivity(StudentActivity studentActivity) {
+        return studentActivity.getPossibleGroupIds().stream()
+                .map(groupId -> GroupStore.groupMap.get(groupId))
+                // if group is not selected one it should not be full (can't move to other group)
+                .filter(group -> group.getId().equals(studentActivity.getSelectedGroupId()) || !group.isFull());
+    }
+
+    private SolutionPoints calculateSolutionPoints() {
         // calculating points
         Long pointsA, pointsB, pointsC, pointsD, pointsE;
         pointsA = pointsB = pointsC = pointsD = pointsE = 0l;
@@ -119,12 +138,17 @@ public class SimulatedAnnealing {
 
         Long totalPoints = pointsA + pointsB + pointsC - pointsD - pointsE;
 
-        if (showReport) {
-            System.out.println("A=" + pointsA + " B=" + pointsB + " C=" + pointsC + " D=" + pointsD + " E=" + pointsE);
-            System.out.println("total: " + totalPoints);
-            System.out.println("+++++++++++++++++++++");
-        }
-        return totalPoints;
+        return new SolutionPoints(pointsA, pointsB, pointsC, pointsD, pointsE, totalPoints);
+    }
+
+    private void printSolutionPoints(SolutionPoints solutionPoints) {
+        System.out.println("A=" + solutionPoints.pointsA
+                + " B=" + solutionPoints.pointsB
+                + " C=" + solutionPoints.pointsC
+                + " D=" + solutionPoints.pointsD
+                + " E=" + solutionPoints.pointsE);
+        System.out.println("total: " + solutionPoints.totalPoints);
+        System.out.println("+++++++++++++++++++++");
     }
 
     // if two lists have intersection items
@@ -152,14 +176,14 @@ public class SimulatedAnnealing {
         return ProblemParameters.awardActivities.get(numOfActivitiesSolved - 1);
     }
 
-    private void memorizeBestSolution(long totalPoints) {
-        bestSolution = StudentActivityStore.studentActivityMap.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, x -> x.getValue().getSelectedGroupId()));
-        bestSolutionValue = totalPoints;
+    private void memorizeBestSolution(SolutionPoints totalPoints) {
+        bestSolution = new BestSolution(GroupStore.groupMap, StudentActivityStore.studentActivityMap, totalPoints);
     }
 
     private void printBestSolutionMap() {
-        for (Map.Entry<String, Long> entry : bestSolution.entrySet())  {
+        Map<String, Long> activityMapWithPoints = bestSolution.getStudentActivityMap().entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, x -> x.getValue().getSelectedGroupId()));
+        for (Map.Entry<String, Long> entry : activityMapWithPoints.entrySet())  {
             System.out.println(entry.getKey() + " / " + entry.getValue());
         }
     }
@@ -170,6 +194,45 @@ public class SimulatedAnnealing {
                 showReportInNextIteration = true;
             }
         };
+    }
+
+    private class BestSolution {
+
+        private Map<Long, Group> groupMap;
+        private Map<String, StudentActivity> studentActivityMap;
+        private SolutionPoints solutionPoints;
+
+        // cloning maps
+        public BestSolution(Map<Long, Group> groupMap, Map<String, StudentActivity> studentActivityMap, SolutionPoints solutionPoints) {
+            this.groupMap = new HashMap<>(groupMap);
+            this.studentActivityMap = new HashMap<>(studentActivityMap);
+            this.solutionPoints = solutionPoints;
+        }
+
+        public Map<Long, Group> getGroupMap() {
+            return groupMap;
+        }
+
+        public Map<String, StudentActivity> getStudentActivityMap() {
+            return studentActivityMap;
+        }
+
+        public SolutionPoints getSolutionPoints() {
+            return solutionPoints;
+        }
+    }
+
+
+    private class SolutionPoints {
+        Long pointsA, pointsB, pointsC, pointsD, pointsE, totalPoints;
+        public SolutionPoints(Long pointsA, Long pointsB, Long pointsC, Long pointsD, Long pointsE, Long totalPoints) {
+            this.pointsA = pointsA;
+            this.pointsB = pointsB;
+            this.pointsC = pointsC;
+            this.pointsD = pointsD;
+            this.pointsE = pointsE;
+            this.totalPoints = totalPoints;
+        }
     }
 
 }
