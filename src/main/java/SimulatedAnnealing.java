@@ -17,20 +17,23 @@ public class SimulatedAnnealing {
     private BestSolution bestSolution;
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
-    private final long reportIntervalPeriodInSeconds = 3L;
 
-    private long currentTemperature = ProblemParameters.intialTemperature;
+    private Double currentTemperature = ProblemParameters.intialTemperature;
 
     public void start() {
 
-        TimeoutTimer timeoutTimer = new TimeoutTimer(ProblemParameters.timeout, getTimerTaskForReports(), reportIntervalPeriodInSeconds);
+        ProblemParameters.calculateReductionCoefficientBasedOnAproxIterationNum();
+
+        TimeoutTimer timeoutTimer = new TimeoutTimer(
+                ProblemParameters.timeout, getTimerTaskForReports(), ProblemParameters.reportIntervalPeriodInSeconds);
 
         // initial solution
         SolutionPoints initialSolutionPoints = calculateSolutionPoints();
         System.out.println("Starting points: " + initialSolutionPoints.totalPoints);
         memorizeBestSolution(initialSolutionPoints);
 
-        while (!timeoutTimer.isFinished()) {
+        // iterate until timeout time or final temperature
+        while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
             randomizeSolution();
             numberOfIterations++;
 
@@ -38,21 +41,29 @@ public class SimulatedAnnealing {
 
             if (currentSolutionPoints.totalPoints > bestSolution.solutionPoints.totalPoints) {
                 memorizeBestSolution(currentSolutionPoints);
+            } else if (currentSolutionPoints.totalPoints < bestSolution.solutionPoints.totalPoints
+                    && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, bestSolution.solutionPoints.totalPoints)) {
+                memorizeBestSolution(currentSolutionPoints);
             } else {
                 // return best solution to current
                 StudentActivityStore.studentActivityMap = bestSolution.getStudentActivityMap();
                 GroupStore.groupMap = bestSolution.getGroupMap();
             }
 
+            currentTemperature = ProblemParameters.temperatureUpdateFunction(currentTemperature);
+
             if (showReportInNextIteration) {
                 printSolutionPoints(bestSolution.solutionPoints);
                 System.out.println("Iterations number: " + numberOfIterations);
+                System.out.println("Temperature: " + currentTemperature);
                 showReportInNextIteration = false;
             }
         }
 
         System.out.println("Best solution is: " + bestSolution.solutionPoints.totalPoints);
         System.out.println("Iterations number: " + numberOfIterations);
+        System.out.println("End temperature: " + currentTemperature
+                + " (final threshold:) " + ProblemParameters.finalTemperature);
         // printBestSolutionMap();
     }
 
@@ -104,6 +115,18 @@ public class SimulatedAnnealing {
                 .map(groupId -> GroupStore.groupMap.get(groupId))
                 // if group is not selected one it should not be full (can't move to other group)
                 .filter(group -> group.getId().equals(studentActivity.getSelectedGroupId()) || !group.isFull());
+    }
+
+    // chance of accepting bad solutions
+    private boolean simulatedAnnealingCriterion(long currentSolutionValue, long bestSolutionValue) {
+        if (currentTemperature == 0L) {
+            return false;
+        }
+        long deltaF = Math.abs(currentSolutionValue - bestSolutionValue);
+        double chanceOfAccepting = Math.pow(Math.E, (-1) * deltaF / currentTemperature);
+        Random generator = new Random();
+        double generatedNum = generator.nextDouble();
+        return generatedNum < chanceOfAccepting;
     }
 
     private SolutionPoints calculateSolutionPoints() {
