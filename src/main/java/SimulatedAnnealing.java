@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 public class SimulatedAnnealing {
 
     private BestSolution bestSolution;
+    private BestSolution reallyBestSolution;
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
 
@@ -31,6 +32,7 @@ public class SimulatedAnnealing {
         SolutionPoints initialSolutionPoints = calculateSolutionPoints();
         System.out.println("Starting points: " + initialSolutionPoints.totalPoints);
         memorizeBestSolution(initialSolutionPoints);
+        memorizeReallyBestSolution(initialSolutionPoints);
 
         // iterate until timeout time or final temperature
         while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
@@ -40,6 +42,9 @@ public class SimulatedAnnealing {
             SolutionPoints currentSolutionPoints = calculateSolutionPoints();
 
             if (currentSolutionPoints.totalPoints > bestSolution.solutionPoints.totalPoints) {
+                if (currentSolutionPoints.totalPoints > reallyBestSolution.solutionPoints.totalPoints) {
+                    memorizeReallyBestSolution(currentSolutionPoints);
+                }
                 memorizeBestSolution(currentSolutionPoints);
             } else if (currentSolutionPoints.totalPoints < bestSolution.solutionPoints.totalPoints
                     && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, bestSolution.solutionPoints.totalPoints)) {
@@ -60,7 +65,7 @@ public class SimulatedAnnealing {
             }
         }
 
-        System.out.println("Best solution is: " + bestSolution.solutionPoints.totalPoints);
+        System.out.println("Best solution is: " + reallyBestSolution.solutionPoints.totalPoints);
         System.out.println("Iterations number: " + numberOfIterations);
         System.out.println("End temperature: " + currentTemperature
                 + " (final threshold:) " + ProblemParameters.finalTemperature);
@@ -201,6 +206,10 @@ public class SimulatedAnnealing {
 
     private void memorizeBestSolution(SolutionPoints totalPoints) {
         bestSolution = new BestSolution(GroupStore.groupMap, StudentActivityStore.studentActivityMap, totalPoints);
+    }
+
+    private void memorizeReallyBestSolution(SolutionPoints totalPoints) {
+        reallyBestSolution = new BestSolution(GroupStore.groupMap, StudentActivityStore.studentActivityMap, totalPoints);
     }
 
     private void printBestSolutionMap() {
