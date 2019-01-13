@@ -5,5 +5,6 @@ public class Test {
         SimulatedAnnealing simulatedAnnealing = new SimulatedAnnealing();
         simulatedAnnealing.start();
         CSVReader.write(simulatedAnnealing.getReallyBestSolution().getStudentActivityMap());
+        System.exit(0);
     }
 }

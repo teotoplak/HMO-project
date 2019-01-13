@@ -13,7 +13,6 @@ public class StudentActivityStore {
     public static Map<String, StudentActivity> studentActivityMap = new HashMap<>();
 
     public static StudentActivity getStudentActivity(Long studentId, Long activityId) {
-        String key = studentId + ":" + activityId;
-        return studentActivityMap.get(key);
+        return studentActivityMap.get(studentId + ":" + activityId);
     }
 }

@@ -6,8 +6,6 @@ import store.GroupStore;
 import store.StudentActivityStore;
 import store.StudentStore;
 
-import java.util.List;
-import java.util.Random;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,6 +16,8 @@ public class SimulatedAnnealing {
     private BestSolution reallyBestSolution;
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
+    private int numOfShowedReport = 0;
+
 
     public BestSolution getReallyBestSolution() {
         return reallyBestSolution;
@@ -28,19 +28,28 @@ public class SimulatedAnnealing {
     public void start() {
 
         ProblemParameters.calculateReductionCoefficientBasedOnAproxIterationNum();
+        System.out.println("Coefficient for reduction calculated: " + ProblemParameters.coeficientForTemperatureReduction);
 
         TimeoutTimer timeoutTimer = new TimeoutTimer(
                 ProblemParameters.timeout, getTimerTaskForReports(), ProblemParameters.reportIntervalPeriodInSeconds);
 
         // initial solution
         SolutionPoints initialSolutionPoints = calculateSolutionPoints();
-        System.out.println("Starting points: " + initialSolutionPoints.totalPoints);
+        System.out.println("Starting points: ");
+        printSolutionPoints(initialSolutionPoints);
         memorizeBestSolution(initialSolutionPoints);
         memorizeReallyBestSolution(initialSolutionPoints);
 
+
+        Random random = new Random();
         // iterate until timeout time or final temperature
         while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
-            randomizeSolution();
+
+            if(((double)numOfShowedReport*ProblemParameters.reportIntervalPeriodInSeconds)/(double)ProblemParameters.timeout < random.nextDouble()) {
+                randomizeSolution();
+            } else {
+                intensifySolution();
+            }
             numberOfIterations++;
 
             SolutionPoints currentSolutionPoints = calculateSolutionPoints();
@@ -62,10 +71,14 @@ public class SimulatedAnnealing {
             currentTemperature = ProblemParameters.temperatureUpdateFunction(currentTemperature);
 
             if (showReportInNextIteration) {
+                System.out.println("+++++++++++++++++++++");
                 printSolutionPoints(bestSolution.solutionPoints);
+                printSolutionPoints(reallyBestSolution.solutionPoints);
                 System.out.println("Iterations number: " + numberOfIterations);
                 System.out.println("Temperature: " + currentTemperature);
                 showReportInNextIteration = false;
+                numOfShowedReport++;
+                calculateNewExpectedIterations();
             }
         }
 
@@ -74,6 +87,74 @@ public class SimulatedAnnealing {
         System.out.println("End temperature: " + currentTemperature
                 + " (final threshold:) " + ProblemParameters.finalTemperature);
         // printBestSolutionMap();
+    }
+
+    private void calculateNewExpectedIterations() {
+        ProblemParameters.expectedIterationsPerSecond = Math.ceil(numberOfIterations / (numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds));
+        ProblemParameters.calculateReductionCoefficientBasedOnAproxIterationNum();
+    }
+
+    private void intensifySolution() {
+        Random random = new Random();
+        // iterate through activities
+        ActivityStore.activities.forEach(activity -> {
+            // for each student activity find possible groups to select and do it randomly
+            List<StudentActivity> studentActivities = activity.getStudentIds().stream()
+                    .map(studentId -> bestSolution.getStudentActivityMap().get(studentId + ":" + activity.getId()))
+                    .filter(StudentActivity::hasRequest)
+                    .filter(studentActivity -> (!studentActivity.isChangedFromInitial() && studentActivity.hasRequest()) ||  random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
+                    .sorted(Comparator.comparingLong(StudentActivity::getSwapWeight))
+                    .collect(Collectors.toList());
+
+            for (StudentActivity studentActivity : studentActivities) {
+
+                // if current studentActivity group is at min limit (hard constraint) - skip
+                if (GroupStore.groupMap.get(studentActivity.getSelectedGroupId()).isAtMinNumOfStudents()) {
+                    continue;
+                }
+
+                List<Long> allCurrentGroupsIdsOfStudent =
+                        StudentStore.getStudentActivitiesOfStudent(studentActivity.getStudentId()).stream()
+                                .map(StudentActivity::getSelectedGroupId)
+                                .collect(Collectors.toList());
+                // all groups for student activity which can be selected (including currently selected)
+                List<Long> possibleGroupIdsToSelect = getPossibleGroupsToSelectForStudentActivity(studentActivity)
+                        // should not have overlap with other student group
+                        .filter(group -> !hasIntersection(group.getOverlapGroupIds(), allCurrentGroupsIdsOfStudent))
+                        .map(Group::getId)
+                        .collect(Collectors.toList());
+
+                // if student has overlaps in all options select overlap at random
+                if (possibleGroupIdsToSelect.size() == 0) {
+                    possibleGroupIdsToSelect = getPossibleGroupsToSelectForStudentActivity(studentActivity)
+                            .map(Group::getId)
+                            .collect(Collectors.toList());
+                }
+
+                //  group selection
+                Long newSelectedGroupId = 0L;
+
+                if(random.nextDouble() > 0.5)
+                for (Long group : possibleGroupIdsToSelect) {
+                    if (GroupStore.groupMap.get(group).getStudentCount() + 1 >= GroupStore.groupMap.get(group).getMinPreferred() &&
+                            GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
+                            !group.equals(studentActivity.getInitialGroupId())) {
+                        newSelectedGroupId = group;
+                        break;
+                    }
+                }
+
+                // if grup is not found in previous block of code
+                if(newSelectedGroupId.equals(0L)) {
+                    // ensure that switching groups happens if a user had requested a swap
+                    if (possibleGroupIdsToSelect.size() > 1) {
+                        possibleGroupIdsToSelect.remove(studentActivity.getInitialGroupId());
+                    }
+                    newSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
+                }
+                studentActivity.selectNewGroup(newSelectedGroupId);
+            }
+        });
     }
 
     // randomize solution and put it into stores
@@ -85,6 +166,8 @@ public class SimulatedAnnealing {
                     .map(studentId -> StudentActivityStore.getStudentActivity(studentId, activity.getId()))
                     .filter(StudentActivity::hasRequest)
                     .collect(Collectors.toList());
+
+          //  Collections.shuffle(studentActivities);
             for (StudentActivity studentActivity : studentActivities) {
 
                 // if current studentActivity group is at min limit (hard constraint) - skip
@@ -114,7 +197,6 @@ public class SimulatedAnnealing {
                 Long newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
                 studentActivity.selectNewGroup(newRandomSelectedGroupId);
             }
-
         });
     }
 
@@ -141,7 +223,7 @@ public class SimulatedAnnealing {
     private SolutionPoints calculateSolutionPoints() {
         // calculating points
         Long pointsA, pointsB, pointsC, pointsD, pointsE;
-        pointsA = pointsB = pointsC = pointsD = pointsE = 0l;
+        pointsA = pointsB = pointsC = pointsD = pointsE = 0L;
         for (Student student : StudentStore.studentMap.values()) {
             List<StudentActivity> studentActivitiesWithRequest =
                     StudentStore.getStudentActivitiesOfStudent(student.getId()).stream()
@@ -174,13 +256,13 @@ public class SimulatedAnnealing {
     }
 
     private void printSolutionPoints(SolutionPoints solutionPoints) {
+
         System.out.println("A=" + solutionPoints.pointsA
                 + " B=" + solutionPoints.pointsB
                 + " C=" + solutionPoints.pointsC
                 + " D=" + solutionPoints.pointsD
                 + " E=" + solutionPoints.pointsE);
         System.out.println("total: " + solutionPoints.totalPoints);
-        System.out.println("+++++++++++++++++++++");
     }
 
     // if two lists have intersection items
@@ -270,5 +352,4 @@ public class SimulatedAnnealing {
             this.totalPoints = totalPoints;
         }
     }
-
 }
