@@ -18,10 +18,10 @@ public class ProblemParameters {
         acceptance 70% temp = 110
         acceptance 50% temp = 50
      */
-    public static final Double intialTemperature = 100.0;
+    public static final Double intialTemperature = 500.0;
     public static final Double finalTemperature = 0.01;
     public static Double coeficientForTemperatureReduction = null;
-    public static final Integer expectedIterationsPerSecond = 20;
+    public static final Integer expectedIterationsPerSecond = 30;
 
     // using geometric function of temp reduction
     public static Double temperatureUpdateFunction(Double temperature) {

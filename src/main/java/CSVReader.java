@@ -12,18 +12,22 @@ import store.StudentActivityStore;
 import store.StudentStore;
 
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class CSVReader {
 
+   private static List<StudentCsv> studentsCsv = new ArrayList<>();
+   private static String studentsFile = "";
+
     public static void read(String[] args) {
 
-        String studentsFile = "";
         String requestsFile = "";
         String overlapsFile = "";
         String limitsFile = "";
@@ -78,7 +82,7 @@ public class CSVReader {
             System.exit(0);
         }
 
-        List<StudentCsv> studentsCsv = parseCsvFileWithHeader(studentsFile).stream()
+        studentsCsv = parseCsvFileWithHeader(studentsFile).stream()
                 .map(StudentCsv::new)
                 .collect(Collectors.toList());
         List<OverlapCsv> overlapsCsv = parseCsvFileWithHeader(overlapsFile).stream()
@@ -193,5 +197,24 @@ public class CSVReader {
         }
 
         return parsedLines;
+    }
+
+    public static void write(Map<String, StudentActivity> studentActivityMap) {
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(studentsFile.split(".csv")[0] + "_modified.csv");
+            fileOutputStream.write("student_id,activity_id,group_id,new_group_id\n".getBytes());
+            studentsCsv.forEach(studentCsv -> {
+                try {
+                    fileOutputStream.write((studentCsv.getStudent_id() + "," +
+                            studentCsv.getActivity_id()+ "," +
+                            studentCsv.getGroup_id() + "," +
+                            studentActivityMap.get(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id()).getSelectedGroupId() + "\n").getBytes());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

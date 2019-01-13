@@ -19,6 +19,10 @@ public class SimulatedAnnealing {
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
 
+    public BestSolution getReallyBestSolution() {
+        return reallyBestSolution;
+    }
+
     private Double currentTemperature = ProblemParameters.intialTemperature;
 
     public void start() {
@@ -228,7 +232,7 @@ public class SimulatedAnnealing {
         };
     }
 
-    private class BestSolution {
+    public class BestSolution {
 
         private Map<Long, Group> groupMap;
         private Map<String, StudentActivity> studentActivityMap;
