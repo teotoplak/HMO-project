@@ -32,4 +32,8 @@ public class Group {
     public void decreaseStudentCount() {
         this.studentCount--;
     }
+
+    public boolean noPrefferedOverflowIfStudentAdded() {
+        return studentCount + 1 <= maxPreferred;
+    }
 }

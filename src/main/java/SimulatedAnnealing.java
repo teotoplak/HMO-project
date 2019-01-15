@@ -60,7 +60,7 @@ public class SimulatedAnnealing {
                 }
                 memorizeBestSolution(currentSolutionPoints);
             } else if (currentSolutionPoints.totalPoints < bestSolution.solutionPoints.totalPoints
-                    && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, reallyBestSolution.solutionPoints.totalPoints)) {
+                    && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, bestSolution.solutionPoints.totalPoints)) {
                 memorizeBestSolution(currentSolutionPoints);
             } else {
                 // return best solution to current
@@ -141,15 +141,16 @@ public class SimulatedAnnealing {
                 //  group selection
                 Long newSelectedGroupId = 0L;
 
+                // greedy pick group
                 for (Long group : possibleGroupIdsToSelect) {
-                    if (GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
-                            !group.equals(studentActivity.getInitialGroupId())) {
+                    if (GroupStore.groupMap.get(group).noPrefferedOverflowIfStudentAdded()
+                            && !group.equals(studentActivity.getInitialGroupId())) {
                         newSelectedGroupId = group;
                         break;
                     }
                 }
 
-                // if grup is not found in previous block of code
+                // if group is not found in previous block of code
                 if(newSelectedGroupId.equals(0L)) {
                     // ensure that switching groups happens if a user had requested a swap
                     if (possibleGroupIdsToSelect.size() > 1) {
@@ -201,21 +202,23 @@ public class SimulatedAnnealing {
                 }
                 Long newRandomSelectedGroupId = 0L;
 
-                if(random.nextDouble() > 0.5)
+                if (random.nextDouble() > 0.5) {
+                    // try to find most appropriate group to add to
                     for (Long group : possibleGroupIdsToSelect) {
-                        if (GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
-                                !group.equals(studentActivity.getInitialGroupId())) {
+                        if (GroupStore.groupMap.get(group).noPrefferedOverflowIfStudentAdded()
+                                && !group.equals(studentActivity.getInitialGroupId())) {
                             newRandomSelectedGroupId = group;
                             break;
                         }
                     }
+                }
 
-                // if grup is not found in previous block of code
+                // if group is not found in previous block of code
                 if(newRandomSelectedGroupId.equals(0L)) {
                     newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
                 }
-                // randomize group selection
 
+                // randomize group selection
                 studentActivity.selectNewGroup(newRandomSelectedGroupId);
             }
         });
