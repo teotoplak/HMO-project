@@ -60,7 +60,7 @@ public class SimulatedAnnealing {
                 }
                 memorizeBestSolution(currentSolutionPoints);
             } else if (currentSolutionPoints.totalPoints < bestSolution.solutionPoints.totalPoints
-                    && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, bestSolution.solutionPoints.totalPoints)) {
+                    && simulatedAnnealingCriterion(currentSolutionPoints.totalPoints, reallyBestSolution.solutionPoints.totalPoints)) {
                 memorizeBestSolution(currentSolutionPoints);
             } else {
                 // return best solution to current
@@ -98,14 +98,21 @@ public class SimulatedAnnealing {
         Random random = new Random();
         // iterate through activities
         ActivityStore.activities.forEach(activity -> {
-            // for each student activity find possible groups to select and do it randomly
+
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> bestSolution.getStudentActivityMap().get(studentId + ":" + activity.getId()))
                     .filter(StudentActivity::hasRequest)
-                    .filter(studentActivity -> (!studentActivity.isChangedFromInitial() && studentActivity.hasRequest()) ||  random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
-                    .sorted(Comparator.comparingLong(StudentActivity::getSwapWeight))
-                    .collect(Collectors.toList());
+                    .filter(studentActivity -> (!studentActivity.isChangedFromInitial() && studentActivity.hasRequest()) || random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
+                    .sorted((o1, o2) -> {
+                        int a = o2.getSwapWeight().intValue() - o1.getSwapWeight().intValue();
+                        if (a != 0) {
+                            return a;
+                        }
+                        return (GroupStore.groupMap.get(o2.getSelectedGroupId()).getStudentCount().intValue() - GroupStore.groupMap.get(o2.getSelectedGroupId()).getMaxPreferred().intValue()) -
+                                (GroupStore.groupMap.get(o1.getSelectedGroupId()).getStudentCount().intValue() - GroupStore.groupMap.get(o1.getSelectedGroupId()).getMaxPreferred().intValue());
+                    })
 
+                    .collect(Collectors.toList());
             for (StudentActivity studentActivity : studentActivities) {
 
                 // if current studentActivity group is at min limit (hard constraint) - skip
@@ -134,10 +141,8 @@ public class SimulatedAnnealing {
                 //  group selection
                 Long newSelectedGroupId = 0L;
 
-                if(random.nextDouble() > 0.5)
                 for (Long group : possibleGroupIdsToSelect) {
-                    if (GroupStore.groupMap.get(group).getStudentCount() + 1 >= GroupStore.groupMap.get(group).getMinPreferred() &&
-                            GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
+                    if (GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
                             !group.equals(studentActivity.getInitialGroupId())) {
                         newSelectedGroupId = group;
                         break;
@@ -160,14 +165,16 @@ public class SimulatedAnnealing {
     // randomize solution and put it into stores
     private void randomizeSolution() {
         // iterate through activities
+        Random random = new Random();
         ActivityStore.activities.forEach(activity -> {
             // for each student activity find possible groups to select and do it randomly
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> StudentActivityStore.getStudentActivity(studentId, activity.getId()))
                     .filter(StudentActivity::hasRequest)
+                    .filter(studentActivity -> random.nextDouble() < 5*ProblemParameters.differenceBetweenNeighbours)
                     .collect(Collectors.toList());
 
-          //  Collections.shuffle(studentActivities);
+            Collections.shuffle(studentActivities);
             for (StudentActivity studentActivity : studentActivities) {
 
                 // if current studentActivity group is at min limit (hard constraint) - skip
@@ -192,9 +199,23 @@ public class SimulatedAnnealing {
                             .map(Group::getId)
                             .collect(Collectors.toList());
                 }
+                Long newRandomSelectedGroupId = 0L;
 
+                if(random.nextDouble() > 0.5)
+                    for (Long group : possibleGroupIdsToSelect) {
+                        if (GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
+                                !group.equals(studentActivity.getInitialGroupId())) {
+                            newRandomSelectedGroupId = group;
+                            break;
+                        }
+                    }
+
+                // if grup is not found in previous block of code
+                if(newRandomSelectedGroupId.equals(0L)) {
+                    newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
+                }
                 // randomize group selection
-                Long newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
+
                 studentActivity.selectNewGroup(newRandomSelectedGroupId);
             }
         });
