@@ -11,7 +11,7 @@ public class ProblemParameters {
     public static Long timeout = 0L;
 
     public static final long reportIntervalPeriodInSeconds = 5L;
-    public static final Double differenceBetweenNeighbours = 0.02;
+    public static final Double differenceBetweenNeighbours = 0.05;
 
     /**
      * Simulated annealing heuristic params
@@ -29,6 +29,11 @@ public class ProblemParameters {
     // using geometric function of temp reduction
     public static Double temperatureUpdateFunction(Double temperature) {
         return temperature * coeficientForTemperatureReduction;
+    }
+
+    public static void calculateNewExpectedIterations(long numberOfIterations, long numOfShowedReport) {
+        expectedIterationsPerSecond = (double) numberOfIterations / ((double) numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds);
+        calculateReductionCoefficientBasedOnAproxIterationNum();
     }
 
     /**

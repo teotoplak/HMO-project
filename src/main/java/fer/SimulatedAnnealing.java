@@ -14,6 +14,7 @@ public class SimulatedAnnealing {
     private Long numberOfIterations = 0L;
     private boolean showReportInNextIteration = false;
     private int numOfShowedReport = 0;
+    private Random random = new Random();
 
     private Double currentTemperature = ProblemParameters.intialTemperature;
 
@@ -34,8 +35,6 @@ public class SimulatedAnnealing {
         System.out.println("Starting points: ");
         printSolutionPoints(bestCurrentSolution.getSolutionPoints());
 
-
-        Random random = new Random();
         // iterate until timeout time or final temperature
         while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
 
@@ -72,7 +71,7 @@ public class SimulatedAnnealing {
                 System.out.println("Temperature: " + currentTemperature);
                 showReportInNextIteration = false;
                 numOfShowedReport++;
-                calculateNewExpectedIterations();
+                ProblemParameters.calculateNewExpectedIterations(numberOfIterations, numOfShowedReport);
             }
         }
 
@@ -83,29 +82,25 @@ public class SimulatedAnnealing {
         // printBestSolutionMap();
     }
 
-    private void calculateNewExpectedIterations() {
-        ProblemParameters.expectedIterationsPerSecond = Math.ceil(numberOfIterations / (numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds));
-        ProblemParameters.calculateReductionCoefficientBasedOnAproxIterationNum();
-    }
 
     private Solution intensifySolution(Solution currentSolution) {
-        Random random = new Random();
+
         // iterate through activities
         ActivityStore.activities.forEach(activity -> {
-
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> currentSolution.getStudentActivityMap().get(studentId + ":" + activity.getId()))
-                    .filter(StudentActivity::hasRequest)
-                    .filter(studentActivity -> (!studentActivity.isChangedFromInitial() && studentActivity.hasRequest()) || random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
+                    .filter(studentActivity -> (!studentActivity.isChangedFromInitial() &&
+                            studentActivity.hasRequest()) ||
+                            random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
                     .sorted((o1, o2) -> {
                         int a = o2.getSwapWeight().intValue() - o1.getSwapWeight().intValue();
                         if (a != 0) {
                             return a;
                         }
-                        return (currentSolution.getGroupMap().get(o2.getSelectedGroupId()).getStudentCount().intValue()
-                                - currentSolution.getGroupMap().get(o2.getSelectedGroupId()).getMaxPreferred().intValue()) -
-                                (currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getStudentCount().intValue()
-                                        - currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getMaxPreferred().intValue());
+                        return (currentSolution.getGroupMap().get(o2.getSelectedGroupId()).getStudentCount().intValue() -
+                                currentSolution.getGroupMap().get(o2.getSelectedGroupId()).getMaxPreferred().intValue()) -
+                                (currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getStudentCount().intValue() -
+                                 currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getMaxPreferred().intValue());
                     })
                     .collect(Collectors.toList());
 
@@ -137,10 +132,14 @@ public class SimulatedAnnealing {
                 //  group selection
                 Long newSelectedGroupId = 0L;
 
+                // ensure that switching groups happens if a user had requested a swap
+                if (possibleGroupIdsToSelect.size() > 1) {
+                    possibleGroupIdsToSelect.remove(studentActivity.getInitialGroupId());
+                }
+
                 // greedy pick group
                 for (Long group : possibleGroupIdsToSelect) {
-                    if (currentSolution.getGroupMap().get(group).noPrefferedOverflowIfStudentAdded()
-                            && !group.equals(studentActivity.getInitialGroupId())) {
+                    if (currentSolution.getGroupMap().get(group).noPrefferedOverflowIfStudentAdded()) {
                         newSelectedGroupId = group;
                         break;
                     }
@@ -148,10 +147,6 @@ public class SimulatedAnnealing {
 
                 // if group is not found in previous block of code
                 if(newSelectedGroupId.equals(0L)) {
-                    // ensure that switching groups happens if a user had requested a swap
-                    if (possibleGroupIdsToSelect.size() > 1) {
-                        possibleGroupIdsToSelect.remove(studentActivity.getInitialGroupId());
-                    }
                     newSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
                 }
                 studentActivity.selectNewGroup(currentSolution.getGroupMap(), newSelectedGroupId);
@@ -165,7 +160,6 @@ public class SimulatedAnnealing {
     private Solution randomizeSolution(Solution currentSolution) {
 
         // iterate through activities
-        Random random = new Random();
         ActivityStore.activities.forEach(activity -> {
             // for each student activity find possible groups to select and do it randomly
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
@@ -214,10 +208,11 @@ public class SimulatedAnnealing {
 
                 // if group is not found in previous block of code
                 if(newRandomSelectedGroupId.equals(0L)) {
+                    // randomize group selection
                     newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
                 }
 
-                // randomize group selection
+                // select new group
                 studentActivity.selectNewGroup(currentSolution.getGroupMap(), newRandomSelectedGroupId);
             }
         });
@@ -266,8 +261,7 @@ public class SimulatedAnnealing {
     }
 
     private Long randomItemFromList(List<Long> list) {
-        Random rand = new Random();
-        return list.get(rand.nextInt(list.size()));
+        return list.get(random.nextInt(list.size()));
     }
 
     private TimerTask getTimerTaskForReports() {
