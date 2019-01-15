@@ -19,8 +19,10 @@ public class Solution {
     }
 
     public Solution(Solution solution) {
-        groupMap = new HashMap<>(solution.getGroupMap());
-        studentActivityMap = new HashMap<>(solution.getStudentActivityMap());
+        this.groupMap = new HashMap<>();//solution.groupMap);
+        solution.getGroupMap().forEach((key, group) -> groupMap.put(key, new Group(group)));
+        this.studentActivityMap = new HashMap<>();//solution.studentActivityMap);
+        solution.getStudentActivityMap().forEach((key, studentActivity) -> studentActivityMap.put(key, new StudentActivity(studentActivity)));
     }
 
     public StudentActivity getStudentActivity(Long studentId, Long activityId) {

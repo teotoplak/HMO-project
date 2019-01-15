@@ -94,7 +94,7 @@ public class SimulatedAnnealing {
         ActivityStore.activities.forEach(activity -> {
 
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
-                    .map(studentId -> bestCurrentSolution.getSolution().getStudentActivityMap().get(studentId + ":" + activity.getId()))
+                    .map(studentId -> currentSolution.getStudentActivityMap().get(studentId + ":" + activity.getId()))
                     .filter(StudentActivity::hasRequest)
                     .filter(studentActivity -> (!studentActivity.isChangedFromInitial() && studentActivity.hasRequest()) || random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
                     .sorted((o1, o2) -> {
@@ -107,8 +107,8 @@ public class SimulatedAnnealing {
                                 (currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getStudentCount().intValue()
                                         - currentSolution.getGroupMap().get(o1.getSelectedGroupId()).getMaxPreferred().intValue());
                     })
-
                     .collect(Collectors.toList());
+
             for (StudentActivity studentActivity : studentActivities) {
 
                 // if current studentActivity group is at min limit (hard constraint) - skip
@@ -171,7 +171,7 @@ public class SimulatedAnnealing {
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> currentSolution.getStudentActivity(studentId, activity.getId()))
                     .filter(StudentActivity::hasRequest)
-                    .filter(studentActivity -> random.nextDouble() < 5*ProblemParameters.differenceBetweenNeighbours)
+                    .filter(studentActivity -> random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
                     .collect(Collectors.toList());
 
             Collections.shuffle(studentActivities);

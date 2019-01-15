@@ -17,6 +17,16 @@ public class Group {
     private Long maxPreferred;
     private List<Long> overlapGroupIds;
 
+    public Group(Group group) {
+        this.id = group.id;
+        this.studentCount = group.studentCount;
+        this.min = group.min;
+        this.max = group.max;
+        this.minPreferred = group.minPreferred;
+        this.maxPreferred = group.maxPreferred;
+        this.overlapGroupIds = group.overlapGroupIds;
+    }
+
     public boolean isFull() {
         return studentCount >= max;
     }

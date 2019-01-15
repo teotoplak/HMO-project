@@ -29,6 +29,16 @@ public class StudentActivity {
         this.hasRequest = possibleGroupIds.size() > 1;
     }
 
+    public StudentActivity(StudentActivity studentActivity) {
+        this.studentId = studentActivity.studentId;
+        this.activityId = studentActivity.activityId;
+        this.selectedGroupId = studentActivity.selectedGroupId;
+        this.initialGroupId = studentActivity.initialGroupId;
+        this.possibleGroupIds = studentActivity.possibleGroupIds;
+        this.swapWeight = studentActivity.swapWeight;
+        this.hasRequest = studentActivity.possibleGroupIds.size() > 1;
+    }
+
     public void selectNewGroup(Map<Long, Group> groupMap, Long groupId) {
         // change counts of groups influenced
         groupMap.get(selectedGroupId).decreaseStudentCount();
