@@ -1,7 +1,7 @@
-package store;
+package fer.store;
 
 import lombok.Data;
-import models.Activity;
+import fer.models.Activity;
 
 import java.util.LinkedList;
 import java.util.List;

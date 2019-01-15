@@ -1,10 +1,10 @@
-package models;
+package fer.models;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import store.GroupStore;
 
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
@@ -29,10 +29,10 @@ public class StudentActivity {
         this.hasRequest = possibleGroupIds.size() > 1;
     }
 
-    public void selectNewGroup(Long groupId) {
+    public void selectNewGroup(Map<Long, Group> groupMap, Long groupId) {
         // change counts of groups influenced
-        GroupStore.groupMap.get(selectedGroupId).decreaseStudentCount();
-        GroupStore.groupMap.get(groupId).increaseStudentCount();
+        groupMap.get(selectedGroupId).decreaseStudentCount();
+        groupMap.get(groupId).increaseStudentCount();
         selectedGroupId = groupId;
     }
 

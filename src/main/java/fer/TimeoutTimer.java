@@ -1,3 +1,5 @@
+package fer;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,7 +23,7 @@ public class TimeoutTimer {
                 isFinished = true;
             }
         };
-        Timer timer = new Timer("TimeoutTimer");
+        Timer timer = new Timer("fer.TimeoutTimer");
         timer.schedule(task, timeoutInSeconds * 1000);
     }
 

@@ -1,8 +1,9 @@
-package store;
+package fer.store;
 
+import fer.models.Solution;
 import lombok.Data;
-import models.Student;
-import models.StudentActivity;
+import fer.models.Student;
+import fer.models.StudentActivity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -14,11 +15,11 @@ public class StudentStore {
 
     public static Map<Long, Student> studentMap = new HashMap<>();
 
-    public static List<StudentActivity> getStudentActivitiesOfStudent(Long studentId) {
+    public static List<StudentActivity> getStudentActivitiesOfStudent(Solution solution, Long studentId) {
         return StudentStore.studentMap.get(studentId)
                 .getActivityIds()
                 .stream()
-                .map(activityId -> StudentActivityStore.getStudentActivity(studentId, activityId))
+                .map(activityId -> solution.getStudentActivity(studentId, activityId))
                 .collect(Collectors.toList());
     }
 

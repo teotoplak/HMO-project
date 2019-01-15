@@ -1,24 +1,17 @@
-import models.Activity;
-import models.Group;
-import models.Student;
-import models.StudentActivity;
-import models.csv.LimitCsv;
-import models.csv.OverlapCsv;
-import models.csv.RequestCsv;
-import models.csv.StudentCsv;
-import store.ActivityStore;
-import store.GroupStore;
-import store.StudentActivityStore;
-import store.StudentStore;
+package fer;
+
+import fer.models.*;
+import fer.models.csv.LimitCsv;
+import fer.models.csv.OverlapCsv;
+import fer.models.csv.RequestCsv;
+import fer.models.csv.StudentCsv;
+import fer.store.*;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class CSVReader {
@@ -26,7 +19,7 @@ public class CSVReader {
    private static List<StudentCsv> studentsCsv = new ArrayList<>();
    private static String studentsFile = "";
 
-    public static void read(String[] args) {
+    public static Solution read(String[] args) {
 
         String requestsFile = "";
         String overlapsFile = "";
@@ -97,15 +90,17 @@ public class CSVReader {
 
         fillStudentStore(studentsCsv);
         fillActivityStore(studentsCsv);
-        fillGroupStore(limitsCsv, overlapsCsv);
-        filStudentActivityStore(studentsCsv, requestsCsv);
+        Map<Long, Group> groupStore = fillGroupStore(limitsCsv, overlapsCsv);
+        Map<String, StudentActivity> studentActivityStore = filStudentActivityStore(studentsCsv, requestsCsv);
+        return new Solution(groupStore, studentActivityStore);
     }
 
-    private static void filStudentActivityStore(List<StudentCsv> studentsCsv, List<RequestCsv> requestsCsv) {
+    private static Map<String, StudentActivity> filStudentActivityStore(List<StudentCsv> studentsCsv, List<RequestCsv> requestsCsv) {
+        Map<String, StudentActivity> studentActivityMap = new HashMap<>();
         for (StudentCsv studentCsv : studentsCsv) {
-            if (!StudentActivityStore.studentActivityMap.containsKey(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id())) {
+            if (!studentActivityMap.containsKey(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id())) {
                 List<Long> possibleGroups = findPossibleGroups(requestsCsv, studentCsv);
-                StudentActivityStore.studentActivityMap.put(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id(),
+                studentActivityMap.put(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id(),
                         new StudentActivity(studentCsv.getStudent_id(),
                                 studentCsv.getActivity_id(),
                                 studentCsv.getGroup_id(),
@@ -114,6 +109,7 @@ public class CSVReader {
                                 studentCsv.getSwap_weight()));
             }
         }
+        return studentActivityMap;
     }
 
     private static List<Long> findPossibleGroups(List<RequestCsv> requestsCsv, StudentCsv studentCsv) {
@@ -127,9 +123,10 @@ public class CSVReader {
         return list;
     }
 
-    private static void fillGroupStore(List<LimitCsv> limitsCsv, List<OverlapCsv> overlapsCsv) {
+    private static Map<Long, Group> fillGroupStore(List<LimitCsv> limitsCsv, List<OverlapCsv> overlapsCsv) {
+        Map<Long, Group> groupMap = new HashMap<>();
         for (LimitCsv limitCsv : limitsCsv) {
-            GroupStore.groupMap.put(limitCsv.getGroup_id(),
+            groupMap.put(limitCsv.getGroup_id(),
                     new Group(limitCsv.getGroup_id(),
                             limitCsv.getStudents_cnt(),
                             limitCsv.getMin(),
@@ -138,6 +135,7 @@ public class CSVReader {
                             limitCsv.getMax_preferred(),
                             findOverlaps(limitCsv.getGroup_id(), overlapsCsv)));
         }
+        return groupMap;
     }
 
 
