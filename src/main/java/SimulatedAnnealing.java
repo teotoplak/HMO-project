@@ -143,8 +143,10 @@ public class SimulatedAnnealing {
 
                 for (Long group : possibleGroupIdsToSelect) {
                     if (GroupStore.groupMap.get(group).getStudentCount() + 1 <= GroupStore.groupMap.get(group).getMaxPreferred() &&
-                            !group.equals(studentActivity.getInitialGroupId())) {
+                            !group.equals(studentActivity.getInitialGroupId()) &&
+                            !group.equals(studentActivity.getSelectedGroupId())) {
                         newSelectedGroupId = group;
+
                         break;
                     }
                 }
@@ -171,7 +173,7 @@ public class SimulatedAnnealing {
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> StudentActivityStore.getStudentActivity(studentId, activity.getId()))
                     .filter(StudentActivity::hasRequest)
-                    .filter(studentActivity -> random.nextDouble() < 5*ProblemParameters.differenceBetweenNeighbours)
+                    .filter(studentActivity -> random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
                     .collect(Collectors.toList());
 
             Collections.shuffle(studentActivities);

@@ -202,11 +202,12 @@ public class CSVReader {
     public static void write(Map<String, StudentActivity> studentActivityMap) {
         try {
             FileOutputStream fileOutputStream = new FileOutputStream(studentsFile.split(".csv")[0] + "_modified.csv");
-            fileOutputStream.write("student_id,activity_id,group_id,new_group_id\n".getBytes());
+            fileOutputStream.write("student_id,activity_id,swap_weight,group_id,new_group_id\n".getBytes());
             studentsCsv.forEach(studentCsv -> {
                 try {
                     fileOutputStream.write((studentCsv.getStudent_id() + "," +
                             studentCsv.getActivity_id()+ "," +
+                            studentCsv.getSwap_weight()+ "," +
                             studentCsv.getGroup_id() + "," +
                             studentActivityMap.get(studentCsv.getStudent_id() + ":" + studentCsv.getActivity_id()).getSelectedGroupId() + "\n").getBytes());
                 } catch (IOException e) {

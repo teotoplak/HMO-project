@@ -9,7 +9,7 @@ public class ProblemParameters {
     public static Long timeout = 0L;
 
     public static final long reportIntervalPeriodInSeconds = 5L;
-    public static final Double differenceBetweenNeighbours = 0.1;
+    public static final Double differenceBetweenNeighbours = 0.02;
 
     /**
      * Simulated annealing heuristic params
@@ -19,7 +19,7 @@ public class ProblemParameters {
         acceptance 70% temp = 110
         acceptance 50% temp = 50
      */
-    public static final Double intialTemperature = 200.0;
+    public static final Double intialTemperature = 2000.0;
     public static final Double finalTemperature = 0.01;
     public static Double coeficientForTemperatureReduction = null;
     public static Double expectedIterationsPerSecond = 70D;
