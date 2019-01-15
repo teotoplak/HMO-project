@@ -37,12 +37,13 @@ public class SimulatedAnnealing {
 
         Random random = new Random();
         // iterate until timeout time or final temperature
-        while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
+        while (currentTemperature > ProblemParameters.finalTemperature) {
 
-            currentSolution =
-                    ((double) numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds)
-                            / (double) ProblemParameters.timeout < random.nextDouble() ?
-                            randomizeSolution(currentSolution) : intensifySolution(currentSolution);
+//            currentSolution =
+//                    ((double) numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds)
+//                            / (double) ProblemParameters.timeout < random.nextDouble() ?
+//                            randomizeSolution(currentSolution) : intensifySolution(currentSolution);
+            currentSolution = randomizeSolution(currentSolution);
             numberOfIterations++;
 
             SolutionPoints currentSolutionPoints = SolutionPoints.calculateSolutionPoints(currentSolution);
@@ -171,7 +172,7 @@ public class SimulatedAnnealing {
             List<StudentActivity> studentActivities = activity.getStudentIds().stream()
                     .map(studentId -> currentSolution.getStudentActivity(studentId, activity.getId()))
                     .filter(StudentActivity::hasRequest)
-                    .filter(studentActivity -> random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
+                    // .filter(studentActivity -> random.nextDouble() < ProblemParameters.differenceBetweenNeighbours)
                     .collect(Collectors.toList());
 
             Collections.shuffle(studentActivities);
@@ -199,26 +200,50 @@ public class SimulatedAnnealing {
                             .map(Group::getId)
                             .collect(Collectors.toList());
                 }
-                Long newRandomSelectedGroupId = 0L;
+                //Long newRandomSelectedGroupId = 0L;
 
-                if (random.nextDouble() > 0.5) {
-                    // try to find most appropriate group to add to
-                    for (Long group : possibleGroupIdsToSelect) {
-                        if (currentSolution.getGroupMap().get(group).noPrefferedOverflowIfStudentAdded()
-                                && !group.equals(studentActivity.getInitialGroupId())) {
-                            newRandomSelectedGroupId = group;
-                            break;
-                        }
+
+
+
+
+//                if (random.nextDouble() > 0.5) {
+//                    // try to find most appropriate group to add to
+//                    for (Long group : possibleGroupIdsToSelect) {
+//                        if (currentSolution.getGroupMap().get(group).noPrefferedOverflowIfStudentAdded()
+//                                && !group.equals(studentActivity.getInitialGroupId())) {
+//                            newRandomSelectedGroupId = group;
+//                            break;
+//                        }
+//                    }
+//                }
+
+                // if group is not found in previous block of code
+//                if(newRandomSelectedGroupId.equals(0L)) {
+//                    newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
+//                }
+
+                Long bestSolutionPoints = Long.MIN_VALUE;
+                Long bestSolutionGroupId = null;
+
+                for (Long groupId : possibleGroupIdsToSelect) {
+                    Long points = SolutionPoints.calculatePointsDifferenceOfGroupSwap(studentActivity, groupId, currentSolution);
+                    if (points > bestSolutionPoints) {
+                        bestSolutionPoints = points;
+                        bestSolutionGroupId = groupId;
                     }
                 }
 
-                // if group is not found in previous block of code
-                if(newRandomSelectedGroupId.equals(0L)) {
-                    newRandomSelectedGroupId = randomItemFromList(possibleGroupIdsToSelect);
+
+
+                if (((double) numOfShowedReport * ProblemParameters.reportIntervalPeriodInSeconds)
+                        / (double) ProblemParameters.timeout < random.nextDouble()) {
+                    studentActivity.selectNewGroup(currentSolution.getGroupMap(), randomItemFromList(possibleGroupIdsToSelect));
+                } else {
+                    studentActivity.selectNewGroup(currentSolution.getGroupMap(), bestSolutionGroupId);
                 }
 
                 // randomize group selection
-                studentActivity.selectNewGroup(currentSolution.getGroupMap(), newRandomSelectedGroupId);
+                // studentActivity.selectNewGroup(currentSolution.getGroupMap(), bestSolutionGroupId);
             }
         });
 

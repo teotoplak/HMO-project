@@ -63,4 +63,81 @@ public class SolutionPoints {
         }
         return ProblemParameters.awardActivities.get(numOfActivitiesSolved - 1);
     }
+
+    public static Long calculatePointsDifferenceOfGroupSwap(StudentActivity studentActivity, Long newGroupId, Solution currentSolution) {
+
+        if (!studentActivity.getPossibleGroupIds().contains(newGroupId)) {
+            System.err.println("Mistake!!");
+        }
+
+        Long pointsDiff = 0L;
+
+        if (studentActivity.getSelectedGroupId().equals(newGroupId)) {
+            return 0L;
+        }
+
+        // points A
+        boolean solvedGood = false;
+        boolean solvedBad = false;
+
+        if (studentActivity.getInitialGroupId().equals(newGroupId)) {
+            pointsDiff -= studentActivity.getSwapWeight();
+            solvedBad = true;
+        }
+        if (!studentActivity.isChangedFromInitial()) {
+            pointsDiff += studentActivity.getSwapWeight();
+            solvedGood = true;
+        }
+
+        // points B
+        List<StudentActivity> studentActivitiesWithRequest =
+                StudentStore.getStudentActivitiesOfStudent(currentSolution, studentActivity.getStudentId()).stream()
+                        .filter(StudentActivity::hasRequest)
+                        .collect(Collectors.toList());
+        Integer countOfSolvedActivities = 0;
+        for (StudentActivity sa : studentActivitiesWithRequest) {
+            if (sa.isChangedFromInitial()) {
+                countOfSolvedActivities++;
+            }
+        }
+        Long currPoints = calculateAwardActivityPoints(countOfSolvedActivities);
+        if (solvedGood) {
+            pointsDiff += calculateAwardActivityPoints(countOfSolvedActivities + 1) - currPoints;
+        }
+        if (solvedBad) {
+            pointsDiff -= currPoints - calculateAwardActivityPoints(countOfSolvedActivities - 1);
+        }
+
+        // points C
+        if (solvedGood && studentActivitiesWithRequest.size() == countOfSolvedActivities + 1) {
+            pointsDiff += ProblemParameters.awardStudent;
+        }
+        if (solvedBad && studentActivitiesWithRequest.size() == countOfSolvedActivities) {
+            pointsDiff -= ProblemParameters.awardStudent;
+        }
+
+        // points D
+        Group addingGroup = currentSolution.getGroupMap().get(newGroupId);
+        if (!addingGroup.isInPrefferedNumberWithCount(addingGroup.getStudentCount() + 1)
+                && addingGroup.isInPrefferedNumberWithCount(addingGroup.getStudentCount())) {
+            pointsDiff -= ProblemParameters.minMaxPenalty;
+        }
+        if (addingGroup.isInPrefferedNumberWithCount(addingGroup.getStudentCount() + 1)
+                && !addingGroup.isInPrefferedNumberWithCount(addingGroup.getStudentCount())) {
+            pointsDiff += ProblemParameters.minMaxPenalty;
+        }
+
+        // points E
+        Group removingGroup = currentSolution.getGroupMap().get(studentActivity.getSelectedGroupId());
+        if (!removingGroup.isInPrefferedNumberWithCount(removingGroup.getStudentCount() - 1)
+                && removingGroup.isInPrefferedNumberWithCount(removingGroup.getStudentCount())) {
+            pointsDiff -= ProblemParameters.minMaxPenalty;
+        }
+        if (removingGroup.isInPrefferedNumberWithCount(removingGroup.getStudentCount() - 1)
+                && !removingGroup.isInPrefferedNumberWithCount(removingGroup.getStudentCount())) {
+            pointsDiff += ProblemParameters.minMaxPenalty;
+        }
+
+        return pointsDiff;
+    }
 }
