@@ -64,7 +64,9 @@ public class SimulatedAnnealing {
 
             if (showReportInNextIteration) {
                 System.out.println("+++++++++++++++++++++");
+                System.out.println("Best Current Solution: ");
                 printSolutionPoints(bestCurrentSolution.getSolutionPoints());
+                System.out.println("Best Total Solution: ");
                 printSolutionPoints(bestTotalSolution.getSolutionPoints());
                 System.out.println("Iterations number: " + numberOfIterations);
                 System.out.println("Temperature: " + currentTemperature);
