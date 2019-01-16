@@ -29,7 +29,7 @@ public class SimulatedAnnealing {
         Solution currentSolution = new Solution(initSolution);
 
         System.out.println("Starting points: ");
-        printSolutionPoints(bestCurrentSolution.getSolutionPoints());
+        printSolutionPoints(SolutionPoints.calculateSolutionPoints(currentSolution));
 
         // greedy first
         currentSolution = greedyGroupExchange(currentSolution);
