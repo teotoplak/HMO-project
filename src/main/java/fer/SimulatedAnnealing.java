@@ -35,6 +35,10 @@ public class SimulatedAnnealing {
         System.out.println("Starting points: ");
         printSolutionPoints(bestCurrentSolution.getSolutionPoints());
 
+        // greedy first
+        currentSolution = greedyGroupExchange(currentSolution);
+        System.out.println("Points after greedy: " + calculateTotalPointsOfSolution(currentSolution));
+
         // iterate until timeout time or final temperature
         while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
 
@@ -220,6 +224,92 @@ public class SimulatedAnnealing {
         return currentSolution;
     }
 
+    private Solution greedyGroupExchange(Solution solution) {
+
+        Long previousSolutionPoints = calculateTotalPointsOfSolution(solution);
+
+        // loop until no better solution is gained
+        while(true) {
+
+            // iterate through activities
+            ActivityStore.activities.forEach(activity -> {
+
+                List<StudentActivity> studentActivitiesNotChangedFromInitial = activity.getStudentIds().stream()
+                        .map(studentId -> solution.getStudentActivity(studentId, activity.getId()))
+                        .filter(StudentActivity::hasRequest)
+                        .filter(studentActivity -> !studentActivity.isChangedFromInitial())
+                        // sort by amount of requests
+                        .sorted(((o1, o2) -> {
+                            Integer first = o1.getPossibleGroupIds().size();
+                            Integer second = o2.getPossibleGroupIds().size();
+                            return first.compareTo(second);
+                        }))
+                        .collect(Collectors.toList());
+
+                // key init groupId, values wanted possible groups to select
+                List<SAAndRequests> requests = new LinkedList<>();
+
+                for (StudentActivity studentActivity : studentActivitiesNotChangedFromInitial) {
+
+                    List<Long> allCurrentGroupsIdsOfStudent =
+                            StudentStore.getStudentActivitiesOfStudent(solution, studentActivity.getStudentId()).stream()
+                                    .map(StudentActivity::getSelectedGroupId)
+                                    .collect(Collectors.toList());
+
+                    // all groups for student activity which can be selected (including currently selected)
+                    List<Long> possibleGroupIdsToSelect = studentActivity.getPossibleGroupIds().stream()
+                            // filter initial group
+                            .filter(groupId -> !groupId.equals(studentActivity.getInitialGroupId()))
+                            .map(groupId -> solution.getGroupMap().get(groupId))
+                            // should not have overlap with other student group
+                            .filter(group -> !hasIntersection(group.getOverlapGroupIds(), allCurrentGroupsIdsOfStudent))
+                            .map(Group::getId)
+                            .collect(Collectors.toList());
+
+                    requests.add(new SAAndRequests(studentActivity, possibleGroupIdsToSelect, studentActivity.getSelectedGroupId()));
+
+                }
+
+                for (SAAndRequests request : requests) {
+                    if (request.isSolved()) {
+                        continue;
+                    }
+                    for (Long groupId : request.getRequests()) {
+                        // try to find matching request
+                        for (SAAndRequests possibleMatch : requests.stream()
+                                .filter(saAndRequests -> !saAndRequests.isSolved())
+                                .filter(saAndRequests -> !saAndRequests.equals(request))
+                                .collect(Collectors.toList())) {
+                            if (possibleMatch.getSelectedGroupId().equals(groupId)
+                                    && possibleMatch.getRequests().contains(request.getSelectedGroupId())) {
+                                // change solution
+                                request.getStudentActivity().selectNewGroup(solution.getGroupMap(), groupId);
+                                possibleMatch.getStudentActivity().selectNewGroup(solution.getGroupMap(), request.getSelectedGroupId());
+                                request.solved();
+                                possibleMatch.solved();
+                                break;
+                            }
+                        }
+                        if (request.isSolved()) {
+                            break;
+                        }
+                    }
+                }
+
+
+            });
+
+            Long newSolutionPoints = calculateTotalPointsOfSolution(solution);
+            if (newSolutionPoints.equals(previousSolutionPoints)) {
+                break;
+            }
+            previousSolutionPoints = newSolutionPoints;
+
+        }
+
+        return solution;
+    }
+
     // filters option if group is full
     private Stream<Group> getPossibleGroupsToSelectForStudentActivity(Solution solution, StudentActivity studentActivity) {
         return studentActivity.getPossibleGroupIds().stream()
@@ -274,6 +364,46 @@ public class SimulatedAnnealing {
 
     public Solution getBestSolution() {
         return bestTotalSolution.getSolution();
+    }
+
+    private Long calculateTotalPointsOfSolution(Solution solution) {
+        return SolutionPoints.calculateSolutionPoints(solution).totalPoints;
+    }
+
+
+    private class SAAndRequests {
+
+        private StudentActivity studentActivity;
+        private List<Long> requests;
+        private Long selectedGroupId;
+        private boolean solved;
+
+        public SAAndRequests(StudentActivity studentActivity, List<Long> requests, Long selectedGroupId) {
+            this.studentActivity = studentActivity;
+            this.requests = requests;
+            this.selectedGroupId = selectedGroupId;
+            solved = false;
+        }
+
+        public StudentActivity getStudentActivity() {
+            return studentActivity;
+        }
+
+        public List<Long> getRequests() {
+            return requests;
+        }
+
+        public Long getSelectedGroupId() {
+            return selectedGroupId;
+        }
+
+        public void solved() {
+            solved = true;
+        }
+
+        public boolean isSolved() {
+            return solved;
+        }
     }
 
 }

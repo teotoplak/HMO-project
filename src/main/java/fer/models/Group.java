@@ -46,4 +46,8 @@ public class Group {
     public boolean noPrefferedOverflowIfStudentAdded() {
         return studentCount + 1 <= maxPreferred;
     }
+
+    public boolean isInPrefferedNumberWithCount(long studentCount) {
+        return minPreferred <= studentCount && maxPreferred >= studentCount;
+    }
 }
