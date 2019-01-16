@@ -26,10 +26,6 @@ public class SimulatedAnnealing {
         TimeoutTimer timeoutTimer = new TimeoutTimer(
                 ProblemParameters.timeout, getTimerTaskForReports(), ProblemParameters.reportIntervalPeriodInSeconds);
 
-        // initial solution
-        bestTotalSolution = new SolutionWithPoints(initSolution);
-        bestCurrentSolution = new SolutionWithPoints(initSolution);
-
         Solution currentSolution = new Solution(initSolution);
 
         System.out.println("Starting points: ");
@@ -38,6 +34,9 @@ public class SimulatedAnnealing {
         // greedy first
         currentSolution = greedyGroupExchange(currentSolution);
         System.out.println("Points after greedy: " + calculateTotalPointsOfSolution(currentSolution));
+
+        bestTotalSolution = new SolutionWithPoints(currentSolution);
+        bestCurrentSolution = new SolutionWithPoints(currentSolution);
 
         // iterate until timeout time or final temperature
         while (!timeoutTimer.isFinished() && currentTemperature > ProblemParameters.finalTemperature) {
